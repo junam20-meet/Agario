@@ -2,6 +2,7 @@ import turtle
 import time
 import random
 import math
+import timeit
 from ball import Ball 
 from turtle import Screen
 turtle.tracer(0)
@@ -18,11 +19,16 @@ game_over = turtle.Turtle()
 turtle.register_shape("GameOver.gif")
 game_over.goto(0,0)
 
-power_up = turtle.Turtle()
-turtle.register_shape("powerup.gif")
-power_up.goto(-250,-300)
+powerupS = turtle.Turtle()
+turtle.register_shape("powerup2.gif")
+powerupS.penup()
+powerupS.shape('powerup2.gif')
+powerupS.goto(10000,10000)
 
 
+
+expu = False # (powerup exists meaning appears on screen)
+durpu = False # (during powerup meaning during 3 seconds of pause)
 running = True 
 
 screen_width = turtle.getcanvas().winfo_width()/2
@@ -144,17 +150,84 @@ def movearound():
 
 
 
-while running == True:
 
+
+def create_powerup():
+	global durpu
+	global expu
+	if not durpu and not expu:
+		n = random.randint(0,5)
+		if n == 1:
+			x = random.randint(-screen_width+ maximum_ball_radius, screen_width -maximum_ball_radius)
+			y = random.randint(-screen_height + maximum_ball_radius, screen_height -maximum_ball_radius)			
+			powerupS.goto(x,y)
+			expu = True
+
+
+def powerup(): # checks if my_ball is in collision with powerup
+	global expu
+	if expu:
+		my_ball_pos_max = (my_ball.pos()[0]+my_ball.r, my_ball.pos()[1]+my_ball.r)
+		my_ball_pos_min = (my_ball.pos()[0]-my_ball.r, my_ball.pos()[1]-my_ball.r)
+		if my_ball_pos_min[0] < powerupS.pos()[0] < my_ball_pos_max[0] and my_ball_pos_min[1] < powerupS.pos()[1] < my_ball_pos_max[1]:
+			powerupS.goto(10000,10000)
+			slowdown()
+			expu = False
+
+
+
+def slowdown():
+	pu_pen = turtle.Turtle()
+	pu_pen.hideturtle()
+	global durpu
+	durpu = True
+	start = timeit.default_timer()
+	for ball in BALLS:
+		ball.dx = ball.dx/10
+		ball.dy = ball.dy/10
+	while timeit.default_timer() - 3 < start and running:
+		print(start,"START!!!")
+		run()
+		if 0 < timeit.default_timer() - start < 1:
+			sec = 3
+		if 1 < timeit.default_timer() - start < 2:
+			sec = 2
+		if 2 < timeit.default_timer() - start < 3:
+			sec = 1
+		pu_pen.penup()
+		pu_pen.goto(-550,190)
+		pu_pen.pendown()
+		pu_pen.pencolor('red')
+		pu_pen.clear()
+		pu_pen.write(sec , align = "right" , font = ("suruma" , 90 , "bold"))
+	pu_pen.clear()
+	for ball in BALLS:
+		dx = random.randint(minimum_ball_dx, maximum_ball_dx)
+		while (dx == 0):
+			dx = random.randint(minimum_ball_dx, maximum_ball_dx)
+		dy = random.randint(minimum_ball_dy , maximum_ball_dy)
+		while (dy == 0):
+			dy = random.randint(minimum_ball_dy , maximum_ball_dy)
+		ball.dx = dx
+		ball.dy = dy
+	durpu = False
+
+
+def run():
 	screen_width = turtle.getcanvas().winfo_width()/2
 	screen_height = turtle.getcanvas().winfo_height()/2
 	movearound() 
 	move_all_balls()
 	check_all_balls_collisions()
 	win()
+	create_powerup()
+	if durpu == False :
+		powerup()
 	turtle.update() 
 	time.sleep(0.1)
-	
+
+while running == True:
+	run()
 
 
 for ball in BALLS:
@@ -164,6 +237,8 @@ for ball in BALLS:
 
 my_ball.r = 0
 my_ball.hideturtle()
+
+
 
 turtle.update()
 time.sleep(0.1)
